@@ -6,8 +6,12 @@
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
+    <spring:beans>
+    		<spring:import resource="classpath:conf/applicationContext.xml"/>    		
+	</spring:beans>
     <flow name="fileconnectortestFlow">
         <file:inbound-endpoint path="D:\connectorTest" responseTimeout="10000" doc:name="File"/>
         <custom-transformer returnClass="java.lang.String" encoding="UTF-8" class="fileconnectortest.FileTransformer" doc:name="File Parser"/>
+        <logger message="#[message.payload]" level="INFO" doc:name="Logger"/>
     </flow>
 </mule>

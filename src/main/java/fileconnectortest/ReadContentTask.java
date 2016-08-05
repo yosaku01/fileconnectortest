@@ -28,8 +28,6 @@ public class ReadContentTask implements Runnable {
 	@Override
 	public void run() 
 	{
-		synchronized (this)
-		{
 			while(true)
 			{				
 				if(!contentQueue.isEmpty())
@@ -53,7 +51,6 @@ public class ReadContentTask implements Runnable {
 					}
 				}
 			}
-			signal.countDown();
-		}
+		signal.countDown();
 	}
 }
