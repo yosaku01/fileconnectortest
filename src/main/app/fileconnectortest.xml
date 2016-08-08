@@ -17,7 +17,8 @@ http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/fil
 	</file:connector>
 	
     <flow name="fileconnectortestFlow" >
-        <file:inbound-endpoint path="D:\connectorTest" responseTimeout="10000" doc:name="File"   connector-ref="input"/>
+        <file:inbound-endpoint path="D:\connectorTest" responseTimeout="10000" doc:name="File"   
+        		connector-ref="input" comparator="fileconnectortest.FileNameSeparator" reverseOrder="true"/>
         <custom-transformer returnClass="java.lang.String" encoding="UTF-8" class="fileconnectortest.FileTransformer" doc:name="File Parser"/>
         <logger message="#[message.payload]" level="INFO" doc:name="Logger"/>
     </flow>
