@@ -7,6 +7,7 @@ import java.util.concurrent.CountDownLatch;
 import javax.annotation.Resource;
 
 import org.mule.api.MuleMessage;
+import org.mule.api.registry.RegistrationException;
 import org.mule.api.transformer.TransformerException;
 import org.mule.transformer.AbstractMessageTransformer;
 import org.mule.util.ExceptionUtils;
@@ -30,8 +31,20 @@ public class FileTransformer extends AbstractMessageTransformer {
 	
 	@Override
 	public Object transformMessage(MuleMessage message, String outputEncoding) throws TransformerException {
+			
 		
 		long startTime = System.currentTimeMillis();
+		
+		logger.info("Process File");		
+		try 
+		{
+			muleContext.getRegistry().unregisterObject("processCompleteFlag");
+			muleContext.getRegistry().registerObject("processCompleteFlag", "false");
+		} 
+		catch (RegistrationException e) {
+			logger.error(ExceptionUtils.getFullStackTrace(e));
+		}		
+		
 		
 		//The file input stream sent by file connector.
 		InputStream inputStream = 
@@ -61,7 +74,17 @@ public class FileTransformer extends AbstractMessageTransformer {
 		} 
     	
     	long endTime = System.currentTimeMillis();
-    	long elaspeTime = endTime - startTime;    	
+    	long elaspeTime = endTime - startTime; 
+    	
+    	try {
+    		muleContext.getRegistry().unregisterObject("processCompleteFlag");
+			muleContext.getRegistry().registerObject("processCompleteFlag", "true");
+			logger.info("Set Complete Flag To True");
+		} catch (RegistrationException e) {
+			logger.error(ExceptionUtils.getFullStackTrace(e));
+		}
+    	
+    	
 		
     	return "The elapse time is:" + elaspeTime;
 	}

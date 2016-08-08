@@ -21,6 +21,7 @@
         <!-- Mule classes -->
         <AsyncLogger name="org.mule" level="INFO"/>
         <AsyncLogger name="com.mulesoft" level="INFO"/>
+        <AsyncLogger name="fileconnectortest" level="INFO" />
 
         <!-- Reduce DM verbosity -->
         <AsyncLogger name="org.jetel" level="WARN"/>

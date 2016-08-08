@@ -9,8 +9,15 @@ http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/fil
     <spring:beans>
     		<spring:import resource="classpath:conf/applicationContext.xml"/>    		
 	</spring:beans>
-    <flow name="fileconnectortestFlow">
-        <file:inbound-endpoint path="D:\connectorTest" responseTimeout="10000" doc:name="File"/>
+	
+	<global-property name="processCompleteFlag" value="true" doc:name="Global Property"/>
+	
+	<file:connector name="input" doc:name="File" recursive="true" > 
+    	<service-overrides messageReceiver="fileconnectortest.CustomFileMessageReceiver"/> 
+	</file:connector>
+	
+    <flow name="fileconnectortestFlow" >
+        <file:inbound-endpoint path="D:\connectorTest" responseTimeout="10000" doc:name="File"   connector-ref="input"/>
         <custom-transformer returnClass="java.lang.String" encoding="UTF-8" class="fileconnectortest.FileTransformer" doc:name="File Parser"/>
         <logger message="#[message.payload]" level="INFO" doc:name="Logger"/>
     </flow>
