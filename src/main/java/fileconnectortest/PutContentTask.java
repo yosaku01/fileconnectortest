@@ -8,6 +8,10 @@ import java.util.concurrent.ArrayBlockingQueue;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.mule.DefaultMuleMessage;
+import org.mule.api.MuleContext;
+import org.mule.api.MuleException;
+import org.mule.api.client.MuleClient;
 
 /**
  * This task is used to parse file input stream and put each line to blocking queue.
@@ -15,15 +19,16 @@ import org.apache.logging.log4j.Logger;
  *
  */
 public class PutContentTask implements Runnable {
-	//This blocking queue is used to contain each line of file.
-	private ArrayBlockingQueue<String> contentQueue = null;
+	//Current mule context.
+	private MuleContext muleContext;
+	
 	//The file input stream.
 	private InputStream inputStream;
 	private final static Logger logger = LogManager.getLogger(PutContentTask.class);
 	
-	public PutContentTask(ArrayBlockingQueue<String> contentQueue, InputStream inputStream)
+	public PutContentTask(MuleContext muleContext, InputStream inputStream)
 	{
-		this.contentQueue = contentQueue;
+		this.muleContext = muleContext;
 		this.inputStream = inputStream;
 	}
 	
@@ -31,17 +36,23 @@ public class PutContentTask implements Runnable {
 	public void run() 
 	{
 			try 
-			{						
+			{					
+				MuleClient muleClient = muleContext.getClient();
 				Scanner scanner = new Scanner(inputStream);
+				DefaultMuleMessage newMessage = null;
 				while(scanner.hasNext())
 				{
 					String line = scanner.nextLine();
-					contentQueue.put(line);				
+					//Wrapper each line content into mule message and send to vm queue.
+					newMessage = new DefaultMuleMessage(line, muleContext);
+					muleClient.send("vm://data", newMessage);				
 				}
-				//Put EOF string to line to notify read task that we reach the end of file.
-				contentQueue.put("EOF");
+				//Wrapper EOF content into mule message to notify the reader component instance
+				//the file has been parsed completely.
+				DefaultMuleMessage endMessage = new DefaultMuleMessage("EOF", muleContext);
+				muleClient.send("vm://data", endMessage);
 				scanner.close();
-			} catch (InterruptedException e) {
+			} catch (MuleException e) {
 				logger.error(ExceptionUtils.getFullStackTrace(e));
 			}
 			finally

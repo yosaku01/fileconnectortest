@@ -1,25 +1,41 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+<mule xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:spring="http://www.springframework.org/schema/beans" 
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
-http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
     <spring:beans>
     		<spring:import resource="classpath:conf/applicationContext.xml"/>    		
 	</spring:beans>
 	
 	<global-property name="processCompleteFlag" value="true" doc:name="Global Property"/>
 	
+	<queued-asynchronous-processing-strategy 
+    	name="singleThreadStrategy" maxThreads="4"  minThreads="4" 
+    	poolExhaustedAction="WAIT" doc:name="Queued Asynchronous Processing Strategy" />
+	
 	<file:connector name="input" doc:name="File" recursive="true" > 
     	<service-overrides messageReceiver="fileconnectortest.CustomFileMessageReceiver"/> 
 	</file:connector>
 	
+	<vm:connector name="memoryStore" doc:name="VM" validateConnections="true"> 
+        <receiver-threading-profile maxThreadsIdle="5" maxThreadsActive="5" poolExhaustedAction="WAIT" threadWaitTimeout="-1"  threadTTL="10000"/>
+        <vm:queue-profile>
+            <simple-in-memory-queue-store/>
+        </vm:queue-profile>
+    </vm:connector>
+	
     <flow name="fileconnectortestFlow" >
         <file:inbound-endpoint path="D:\connectorTest" responseTimeout="10000" doc:name="File"   
         		connector-ref="input" comparator="fileconnectortest.FileNameSeparator" reverseOrder="true"/>
-        <custom-transformer returnClass="java.lang.String" encoding="UTF-8" class="fileconnectortest.FileTransformer" doc:name="File Parser"/>
-        <logger message="#[message.payload]" level="INFO" doc:name="Logger"/>
+        <custom-transformer  encoding="UTF-8" class="fileconnectortest.FileTransformer" doc:name="File Parser"/>
+    </flow>
+    <flow name="Read_Data_Flow" processingStrategy="synchronous">
+        <vm:inbound-endpoint exchange-pattern="one-way" path="data" doc:name="VM" connector-ref="memoryStore"/>
+         <component class="fileconnectortest.ReadContentComponent" doc:name="Read Content"/>
     </flow>
 </mule>

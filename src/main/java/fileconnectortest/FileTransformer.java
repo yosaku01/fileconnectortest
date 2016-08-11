@@ -18,10 +18,7 @@ import org.apache.logging.log4j.Logger;
 
 public class FileTransformer extends AbstractMessageTransformer {
 
-	//The blocking queue used to process file content.
-	@Resource
-	private ArrayBlockingQueue<String> contentQueue;	
-	
+
 	//The thread pool executor to provide threads to process file content.
 	@Autowired
 	private ThreadPoolTaskExecutor queueExecutor;
@@ -31,9 +28,6 @@ public class FileTransformer extends AbstractMessageTransformer {
 	
 	@Override
 	public Object transformMessage(MuleMessage message, String outputEncoding) throws TransformerException {
-			
-		
-		long startTime = System.currentTimeMillis();
 		
 		logger.info("Process File");		
 		try 
@@ -51,42 +45,10 @@ public class FileTransformer extends AbstractMessageTransformer {
 				(InputStream)message.getPayload();
 		
 		PutContentTask putContentTask =
-    			new PutContentTask(contentQueue, inputStream);
-    	queueExecutor.execute(putContentTask);  
-    	
-    	CountDownLatch threadSignal = new CountDownLatch(5);
-    	
-    	for(int i=0; i<5;i++)
-    	{
-    		String taskName = "ReadContentTask " + i;
-    		ReadContentTask readContentTask =
-    				new ReadContentTask(contentQueue, taskName, threadSignal);
-    		queueExecutor.execute(readContentTask);
-    	}
-    	
-    	try 
-    	{
-			threadSignal.await();			
-			contentQueue.clear();
-		} 
-    	catch (Exception e) {
-			logger.error(ExceptionUtils.getFullStackTrace(e));
-		} 
-    	
-    	long endTime = System.currentTimeMillis();
-    	long elaspeTime = endTime - startTime; 
-    	
-    	try {
-    		muleContext.getRegistry().unregisterObject("processCompleteFlag");
-			muleContext.getRegistry().registerObject("processCompleteFlag", "true");
-			logger.info("Set Complete Flag To True");
-		} catch (RegistrationException e) {
-			logger.error(ExceptionUtils.getFullStackTrace(e));
-		}
-    	
-    	
+    			new PutContentTask(muleContext, inputStream);
+    	queueExecutor.execute(putContentTask);      	
 		
-    	return "The elapse time is:" + elaspeTime;
+    	return null;
 	}
 
 }
